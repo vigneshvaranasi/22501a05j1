@@ -15,8 +15,12 @@
   "description": "",
   "dependencies": {
     "@types/express": "^4.17.23",
+    "cors": "^2.8.5",
     "dotenv": "^17.0.0",
     "express": "^4.21.2",
     "typescript": "^5.8.3"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19"
   }
 }

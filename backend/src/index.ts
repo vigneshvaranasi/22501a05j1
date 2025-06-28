@@ -1,8 +1,12 @@
 import express, { Request, Response } from 'express'
 import dotenv from 'dotenv'
 dotenv.config()
+import cors from 'cors'
 
 const app = express()
+app.use(cors({
+  origin:'*'
+}))
 
 app.use(express.json())
 

@@ -65,7 +65,7 @@ router.post('/', async (req: Request, res: Response) => {
         };
         
         res.status(201).json({ 
-            "shortLink": `http://localhost:5000/${shortCode}`,
+            "shortLink": `http://localhost:5000/shorturls/${shortCode}`,
             "expiry": new Date(expiryTime * 1000).toISOString()
         });
 
@@ -74,8 +74,42 @@ router.post('/', async (req: Request, res: Response) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+router.get('/allurls', async (req: Request, res: Response) => {
+    try {
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        const urlsList = Object.keys(allURLs).map(shortCode => {
+            const urlData = allURLs[shortCode];
+            return {
+                shortcode: urlData.shortcode,
+                originalUrl: urlData.url,
+                shortLink: `http://localhost:5000/shorturls/${shortCode}`,
+                createdAt: new Date(urlData.createdAt * 1000).toISOString(),
+                expiryDate: new Date(urlData.validity * 1000).toISOString(),
+                totalClicks: urlData.clicks,
+                clickData: urlData.clickedData || [],
+                isExpired: currentTime > urlData.validity,
+                timeRemaining: Math.max(0, urlData.validity - currentTime)
+            };
+        });
+        
+        // Sort by creation date (newest first)
+        urlsList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+        res.json({
+            urls: urlsList,
+            totalUrls: urlsList.length,
+            activeUrls: urlsList.filter(url => !url.isExpired).length,
+            expiredUrls: urlsList.filter(url => url.isExpired).length
+        });
+        
+    } catch (error) {
+        console.error('Error fetching all URLs:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
-router.get('/:shortCode', async (req: Request, res: Response) => {
+router.get('/stats/:shortCodeStats', async (req: Request, res: Response) => {
     try {
         const { shortCode } = req.params;        
         if (!allURLs[shortCode]) {
@@ -102,6 +136,36 @@ router.get('/:shortCode', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Error in statistics route:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+router.get('/:shortCode', async (req: Request, res: Response) => {
+    try {
+        const { shortCode } = req.params;
+        
+        if (!allURLs[shortCode]) {
+        }
+        
+        const urlData = allURLs[shortCode];
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        if (currentTime > urlData.validity) {
+        }
+        const referer = req.headers['referer'] || 'Direct';
+        const clickData: clickedData = {
+            timestamp: currentTime,
+            source: referer,
+            location: 'Web'
+        };
+        
+        allURLs[shortCode].clicks += 1;
+        if (!allURLs[shortCode].clickedData) {
+            allURLs[shortCode].clickedData = [];
+        }
+        allURLs[shortCode].clickedData!.push(clickData);
+        res.redirect(302, urlData.url);
+        
+    } catch (error) {
+        console.error('Error in redirect route:', error);
     }
 });
 
